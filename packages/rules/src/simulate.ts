@@ -12,11 +12,11 @@ import { type CompileOptions, compileRules } from "./compile";
 import type { TableRules } from "./presets";
 import { BOOTSTRAP_SQL, qualified, quoteIdent } from "./sql";
 
-/** A synthetic identity to evaluate against. */
+/** A synthetic identity to evaluate against (accepts verified-claim shapes with nulls). */
 export interface SimUser {
-  sub?: string;
-  org_id?: string;
-  role?: string;
+  sub?: string | null;
+  org_id?: string | null;
+  role?: string | null;
   roles?: string[];
 }
 
@@ -116,9 +116,9 @@ export class Simulator {
 
 function toClaims(u: SimUser): Record<string, unknown> {
   const claims: Record<string, unknown> = {};
-  if (u.sub !== undefined) claims.sub = u.sub;
-  if (u.org_id !== undefined) claims.org_id = u.org_id;
-  if (u.role !== undefined) claims.role = u.role;
-  if (u.roles !== undefined) claims.roles = u.roles;
+  if (u.sub != null) claims.sub = u.sub;
+  if (u.org_id != null) claims.org_id = u.org_id;
+  if (u.role != null) claims.role = u.role;
+  if (u.roles != null) claims.roles = u.roles;
   return claims;
 }

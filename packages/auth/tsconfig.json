@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    // Better Auth's inferred return type references zod internals that aren't
+    // portable into a .d.ts (TS2742). This package doesn't emit declarations
+    // (tsup dts:false); type-checking is unaffected.
+    "declaration": false
+  },
+  "include": ["src"]
+}

@@ -8,9 +8,10 @@ no functions, no realtime — just the differentiator.
 
 ## Build order
 
-1. **Auth → claims** _(scaffolded; needs wiring)_
-   Better Auth up with `organization` + `jwt` plugins; inject `sub`/`org_id`/`role`
-   into the JWT payload; expose JWKS. Verify against installed version.
+1. **Auth → claims** _(wired; bridge proven)_
+   Better Auth (1.6.18) with `organization` + `jwt` plugins; `definePayload`
+   injects `sub`/`org_id`/`role`; EdDSA + JWKS. `verifyClaims` gates the api side.
+   Bridge proven by `bridge.test.ts`; full HTTP sign-in e2e still pending.
    → `@authzdx/auth`
 
 2. **Locked by default** _(done)_
@@ -42,15 +43,17 @@ When 1–6 run, the loop is demoable.
 | 2 Locked by default | ✅ implemented + tested |
 | 3 Preset → RLS compiler | ✅ implemented (`compile.test.ts`) |
 | 4 Simulator (read) | ✅ implemented + tested (`owner-only.test.ts`) |
-| 1 Auth → claims | 🟡 scaffold (`@authzdx/auth`) |
+| 1 Auth → claims | 🟢 wired + bridge proven (`bridge.test.ts`); HTTP sign-in e2e pending |
 | 5 Admin · 6 Data API | ⬜ not started |
 
 ## Next concrete tasks
 
 - [ ] Simulator: add `create`/`update`/`delete` evaluation (try-op-in-tx, rollback,
       report allow/deny) + tests for `org` and `role` presets.
-- [ ] Wire `@authzdx/auth` (install Better Auth, verify claim injection) and add an
-      integration test: real issued JWT → `request.jwt.claims` → RLS decision.
+- [x] Wire `@authzdx/auth` (Better Auth 1.6.18, claim injection via `definePayload`)
+      + bridge test: real EdDSA JWT → JWKS verify → `request.jwt.claims` → RLS.
+- [ ] Full Better-Auth HTTP sign-in e2e (DB adapter + active org) exercising
+      `createAuth` end to end.
 - [ ] `apps/api`: stand up PostgREST against pglite/Postgres; confirm it sets
       `request.jwt.claims` from the verified JWT.
 - [ ] `apps/admin`: table list + status, preset builder, simulate/publish.
