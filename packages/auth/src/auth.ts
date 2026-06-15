@@ -11,6 +11,17 @@ export interface AuthEnv {
 }
 
 /**
+ * The portable public surface of the auth instance. Better Auth's full inferred
+ * type references zod internals that aren't nameable in a .d.ts (TS2742), so we
+ * narrow to what consumers actually use (the request handler + the api object).
+ */
+export interface AuthInstance {
+  readonly handler: (request: Request) => Promise<Response>;
+  readonly api: Record<string, unknown>;
+  readonly options: unknown;
+}
+
+/**
  * Better Auth, wired to issue an asymmetric (EdDSA) JWT whose payload carries the
  * claims the rules engine reads. `definePayload` IS the auth -> authz bridge:
  * it injects the active org + role exactly like Supabase's custom access token
@@ -19,7 +30,7 @@ export interface AuthEnv {
  * The api role downstream must verify this JWT (offline, via the JWKS endpoint)
  * and set `request.jwt.claims` from the verified payload — never from the client.
  */
-export function createAuth(env: AuthEnv) {
+export function createAuth(env: AuthEnv): AuthInstance {
   return betterAuth({
     secret: env.secret,
     baseURL: env.baseUrl,
@@ -42,5 +53,5 @@ export function createAuth(env: AuthEnv) {
         },
       }),
     ],
-  });
+  }) as unknown as AuthInstance;
 }

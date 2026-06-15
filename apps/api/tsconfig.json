@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Build is handled by tsup; tsc only type-checks (--noEmit), so no rootDir/
+    // outDir. declaration off: private app, never publishes .d.ts.
+    "noEmit": true,
+    "declaration": false
+  },
+  "include": ["src", "test"]
+}
