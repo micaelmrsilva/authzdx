@@ -2,6 +2,7 @@ import { type AuthzdxClaims, verifyClaims } from "@authzdx/auth";
 import type { Db } from "@authzdx/db";
 import { type TableRules, compileRules } from "@authzdx/rules";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import type { JSONWebKeySet } from "jose";
 import { selectAs } from "./data";
 
@@ -19,6 +20,9 @@ export function createApp(config: ApiConfig) {
   const apiRole = config.apiRole ?? "authenticated";
   const anonRole = config.anonRole ?? "anon";
   const app = new Hono();
+  // v0: permissive CORS so the admin (a separate origin) can call the API.
+  // Tighten to the admin's origin in production.
+  app.use("*", cors());
 
   // ---- control plane (drives the admin) ----
 

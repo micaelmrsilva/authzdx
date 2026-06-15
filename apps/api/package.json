@@ -7,7 +7,7 @@
     "build": "tsup",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "dev": "node src/index.ts"
+    "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
     "@authzdx/auth": "workspace:*",
@@ -20,6 +20,7 @@
     "@types/node": "catalog:",
     "jose": "6.2.3",
     "tsup": "catalog:",
+    "tsx": "4.22.4",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
