@@ -1,0 +1,8 @@
+{
+  "name": "@authzdx/auth",
+  "version": "0.0.0",
+  "description": "Auth foundation (Better Auth) — issues the JWT whose claims the rules engine reads.",
+  "type": "module",
+  "license": "MIT",
+  "private": true
+}

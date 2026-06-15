@@ -1,0 +1,11 @@
+packages:
+  - "packages/*"
+  - "apps/*"
+
+# Versões compartilhadas das ferramentas de dev (pnpm catalog).
+# Pinadas em versão exata por segurança (supply-chain). Sem ^/~.
+catalog:
+  typescript: 5.9.3
+  vitest: 3.2.6
+  tsup: 8.5.1
+  "@types/node": 22.19.21
