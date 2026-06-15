@@ -1,0 +1,246 @@
+:root {
+  --bg: #0f1115;
+  --panel: #171a21;
+  --line: #262b36;
+  --text: #e6e8ee;
+  --muted: #8a92a6;
+  --accent: #5b8cff;
+  --green: #3ecf8e;
+  --amber: #f5a623;
+  --red: #ff6b6b;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.sub {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.cols {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+h2 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+.mt {
+  margin-top: 24px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.tables {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.row:hover {
+  border-color: var(--accent);
+}
+
+.row.selected {
+  border-color: var(--accent);
+  background: #1b2030;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.badge {
+  font-size: 12px;
+}
+
+.s-exposed {
+  color: var(--red);
+}
+
+.s-locked {
+  color: var(--amber);
+}
+
+.s-configured {
+  color: var(--green);
+}
+
+.presets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preset {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #11141b;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.pk {
+  font-weight: 600;
+}
+
+input {
+  background: #0c0e13;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 6px 8px;
+  font: inherit;
+}
+
+button {
+  font: inherit;
+}
+
+.add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0;
+}
+
+.add button {
+  background: transparent;
+  border: 1px dashed var(--line);
+  color: var(--muted);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.add button:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.x {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.primary {
+  background: var(--accent);
+  border: none;
+  color: white;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.sim {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sim label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.sim button {
+  background: #20283a;
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+.result {
+  margin-top: 12px;
+}
+
+.blocked {
+  color: var(--red);
+}
+
+.ok {
+  color: var(--green);
+}
+
+pre {
+  background: #0c0e13;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  overflow: auto;
+  font-size: 12px;
+}
+
+.msg {
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: #1b2030;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+}

@@ -10,6 +10,20 @@ const jwksUrl = process.env.AUTH_JWKS_URL ?? "http://localhost:3000/.well-known/
 const db = await openDb({ url: databaseUrl });
 await initProjectDb(db);
 
+// Local demo convenience: on throwaway in-memory pglite, seed a sample table so
+// the admin has something to show. Never runs against a real database.
+if (!databaseUrl) {
+  await db.exec(
+    "create table if not exists public.posts (id serial primary key, title text not null, user_id text not null)",
+  );
+  const { rows } = await db.query<{ n: number }>("select count(*)::int as n from public.posts");
+  if (rows[0]?.n === 0) {
+    await db.exec(
+      "insert into public.posts (title, user_id) values ('Alice draft', 'user_alice'), ('Bob draft', 'user_bob')",
+    );
+  }
+}
+
 // v0: snapshot the JWKS at boot. A rotating/remote JWKS (createRemoteJWKSet) is
 // the production follow-up.
 let jwks: JSONWebKeySet = { keys: [] };
