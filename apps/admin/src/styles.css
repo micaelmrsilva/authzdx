@@ -121,6 +121,62 @@ h2 {
   color: var(--green);
 }
 
+.action-block {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.action-head {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.small {
+  font-size: 12px;
+  margin: 0;
+}
+
+.warn {
+  background: #2a230f;
+  border: 1px solid var(--amber);
+  color: #f3d9a6;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+select {
+  background: #0c0e13;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 6px 8px;
+  font: inherit;
+}
+
+.json-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+textarea {
+  background: #0c0e13;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  min-height: 64px;
+  resize: vertical;
+}
+
 .presets {
   display: flex;
   flex-direction: column;
