@@ -1,4 +1,4 @@
-import { type JSONWebKeySet, createLocalJWKSet, jwtVerify } from "jose";
+import { type JSONWebKeySet, type JWTVerifyGetKey, createLocalJWKSet, jwtVerify } from "jose";
 import type { AuthzdxClaims } from "./claims";
 
 export interface VerifyOptions {
@@ -7,17 +7,25 @@ export interface VerifyOptions {
 }
 
 /**
- * API-side verification: verify a JWT against the issuer's JWKS — offline, no
- * round-trip — and return the authzdx claims. This is what the data API must run
- * before it ever sets `request.jwt.claims`. Claims are NEVER trusted from the
- * client without passing through here.
+ * A key source: either a static JWKS (verified against an in-memory set) or a
+ * jose key-getter — e.g. `createRemoteJWKSet(url)`, which fetches on demand,
+ * caches, and follows key rotation. Both verify the signature locally; only how
+ * the public keys are obtained differs.
+ */
+export type KeySource = JSONWebKeySet | JWTVerifyGetKey;
+
+/**
+ * API-side verification: verify a JWT against the issuer's keys and return the
+ * authzdx claims. This is what the data API must run before it ever sets
+ * `request.jwt.claims`. Claims are NEVER trusted from the client without passing
+ * through here.
  */
 export async function verifyClaims(
   token: string,
-  jwks: JSONWebKeySet,
+  keys: KeySource,
   opts: VerifyOptions = {},
 ): Promise<AuthzdxClaims> {
-  const keySet = createLocalJWKSet(jwks);
+  const keySet = typeof keys === "function" ? keys : createLocalJWKSet(keys);
   const { payload } = await jwtVerify(token, keySet, {
     issuer: opts.issuer,
     audience: opts.audience,

@@ -1,0 +1,25 @@
+{
+  "name": "@authzdx/auth-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "dev": "PORT=3100 BETTER_AUTH_URL=http://localhost:3100 ADMIN_ORIGIN=http://localhost:5174 tsx watch src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@authzdx/auth": "workspace:*",
+    "@hono/node-server": "2.0.4",
+    "hono": "4.12.25",
+    "pg": "8.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/pg": "8.15.6",
+    "tsup": "catalog:",
+    "tsx": "4.22.4",
+    "typescript": "catalog:"
+  }
+}

@@ -21,17 +21,21 @@ export interface AuthInstance {
   readonly options: unknown;
 }
 
+/** The relative path (under Better Auth's `/api/auth` base) that serves the JWKS. */
+export const JWKS_PATH = "/.well-known/jwks.json";
+
 /**
- * Better Auth, wired to issue an asymmetric (EdDSA) JWT whose payload carries the
- * claims the rules engine reads. `definePayload` IS the auth -> authz bridge:
- * it injects the active org + role exactly like Supabase's custom access token
- * hook, so `authzdx.uid()/.org()/.has_role()` can read them inside Postgres.
+ * The Better Auth configuration — the single source of truth shared by the live
+ * instance (`createAuth`) and the migration runner (`runAuthMigrations`), so both
+ * see the exact same database, plugins, and claim contract.
  *
- * The api role downstream must verify this JWT (offline, via the JWKS endpoint)
- * and set `request.jwt.claims` from the verified payload — never from the client.
+ * `definePayload` IS the auth -> authz bridge: it injects the active org + role
+ * exactly like Supabase's custom access token hook, so `authzdx.uid()/.org()/
+ * .has_role()` can read them inside Postgres. The JWT is asymmetric (EdDSA) and
+ * verified downstream offline via the JWKS endpoint — never trusted from the client.
  */
-export function createAuth(env: AuthEnv): AuthInstance {
-  return betterAuth({
+export function authOptions(env: AuthEnv): BetterAuthOptions {
+  return {
     secret: env.secret,
     baseURL: env.baseUrl,
     database: env.database,
@@ -40,7 +44,7 @@ export function createAuth(env: AuthEnv): AuthInstance {
     plugins: [
       organization(),
       jwt({
-        jwks: { jwksPath: "/.well-known/jwks.json" },
+        jwks: { jwksPath: JWKS_PATH },
         jwt: {
           // session is typed `Session & Record<string, any>`, so the
           // organization plugin's fields are accessible here.
@@ -53,5 +57,10 @@ export function createAuth(env: AuthEnv): AuthInstance {
         },
       }),
     ],
-  }) as unknown as AuthInstance;
+  };
+}
+
+/** The live Better Auth instance, issuing the EdDSA JWT the rules engine reads. */
+export function createAuth(env: AuthEnv): AuthInstance {
+  return betterAuth(authOptions(env)) as unknown as AuthInstance;
 }

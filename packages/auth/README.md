@@ -22,19 +22,21 @@ Better Auth  --(JWT: sub, org_id, role)-->  request.jwt.claims  -->  Postgres RL
 
 | Export | What |
 |---|---|
-| `createAuth(env)` | Better Auth instance (org + JWT plugins, EdDSA, JWKS at `/.well-known/jwks.json`). |
+| `authOptions(env)` | The Better Auth config — shared by the live instance and the migrator. |
+| `createAuth(env)` | Better Auth instance (org + JWT plugins, EdDSA, JWKS at `JWKS_PATH`). |
+| `runAuthMigrations(env)` | Create/upgrade the Better Auth tables (idempotent; used on boot). |
 | `buildClaims(input)` | Session → the `{ sub, org_id, role }` contract. Single source of truth. |
-| `verifyClaims(token, jwks, opts?)` | Offline JWKS verify → claims. The api-side gate. |
+| `verifyClaims(token, keys, opts?)` | Verify → claims. `keys` is a static JWKS or a `createRemoteJWKSet` getter. |
+
+The runnable HTTP server that mounts `createAuth` lives in [`apps/auth`](../../apps/auth).
 
 ## Status
 
-🟢 Wired against Better Auth `1.6.18` (API verified). The **bridge is proven** by
-`test/bridge.test.ts`: a real EdDSA JWT → JWKS verify → claims → RLS decision, plus
-forged-token rejection.
-
-**Follow-up:** a full Better-Auth HTTP sign-in e2e (DB adapter + active org) and
-`apps/api` setting `request.jwt.claims` from the verified token. `createAuth`
-typechecks but is not yet exercised at runtime by a test.
+🟢 Wired against Better Auth `1.6.18` and **proven end-to-end** against real
+Postgres: HTTP sign-up → EdDSA JWT (`sub`/`org_id`/`role`) → offline JWKS verify →
+`request.jwt.claims` → RLS decision. `test/bridge.test.ts` locks the cryptographic
+contract (incl. forged-token rejection); `apps/auth` + `apps/api` exercise the
+full sign-in path.
 
 ```bash
 # verify
