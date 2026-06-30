@@ -21,7 +21,8 @@
   },
   "dependencies": {
     "@authzdx/rules": "workspace:*",
-    "@electric-sql/pglite": "0.5.2"
+    "@electric-sql/pglite": "0.5.2",
+    "postgres": "3.4.9"
   },
   "devDependencies": {
     "@types/node": "catalog:",
