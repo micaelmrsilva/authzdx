@@ -1,20 +1,42 @@
-import { type AuthzdxClaims, verifyClaims } from "@authzdx/auth";
+import { type AuthzdxClaims, type KeySource, verifyClaims } from "@authzdx/auth";
 import type { Db } from "@authzdx/db";
-import { type TableRules, compileRules } from "@authzdx/rules";
-import { Hono } from "hono";
+import { type Action, type TableRules, compileRules } from "@authzdx/rules";
+import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
-import type { JSONWebKeySet } from "jose";
-import { selectAs } from "./data";
+import { type Identity, deleteAs, insertAs, selectAs, updateAs } from "./data";
 
 export interface ApiConfig {
   db: Db;
-  /** The issuer's JWKS (from Better Auth's /.well-known/jwks.json). */
-  jwks: JSONWebKeySet;
+  /**
+   * The issuer's keys: a static JWKS (tests) or a remote key-getter from
+   * `createRemoteJWKSet(<auth>/api/auth/.well-known/jwks.json)` (production —
+   * lazy fetch, cache, rotation).
+   */
+  jwks: KeySource;
   apiRole?: string;
   anonRole?: string;
 }
 
 const SCHEMA = "public";
+
+/**
+ * Better Auth's own tables live in `public` too. They are the auth system's
+ * private store (reached only by the auth server as table owner, never via the
+ * data API), so the control plane hides them — a non-dev should not see "user"
+ * or "jwks" listed as "exposed" and try to lock them.
+ */
+const SYSTEM_TABLES = new Set([
+  "user",
+  "session",
+  "account",
+  "verification",
+  "jwks",
+  "organization",
+  "member",
+  "invitation",
+  "team",
+  "teamMember",
+]);
 
 export function createApp(config: ApiConfig) {
   const apiRole = config.apiRole ?? "authenticated";
@@ -44,12 +66,14 @@ export function createApp(config: ApiConfig) {
       [SCHEMA],
     );
     return c.json({
-      tables: rows.map((r) => ({
-        name: r.table,
-        rlsEnabled: r.rls_enabled,
-        policies: r.policies,
-        status: !r.rls_enabled ? "exposed" : r.policies === 0 ? "locked" : "configured",
-      })),
+      tables: rows
+        .filter((r) => !SYSTEM_TABLES.has(r.table))
+        .map((r) => ({
+          name: r.table,
+          rlsEnabled: r.rls_enabled,
+          policies: r.policies,
+          status: !r.rls_enabled ? "exposed" : r.policies === 0 ? "locked" : "configured",
+        })),
     });
   });
 
@@ -64,49 +88,106 @@ export function createApp(config: ApiConfig) {
 
   /** Simulate "as user X" against the live table — the heart of the admin. */
   app.post("/tables/:table/simulate", async (c) => {
-    const body = (await c.req.json()) as { as: AuthzdxClaims | "anon" };
+    const body = (await c.req.json()) as {
+      as: AuthzdxClaims | "anon";
+      action?: Action;
+      values?: Record<string, unknown>;
+      match?: Record<string, unknown>;
+    };
+    const table = c.req.param("table");
     const isAnon = body.as === "anon";
-    const result = await selectAs(config.db, {
-      schema: SCHEMA,
-      table: c.req.param("table"),
+    const id: Identity = {
       claims: isAnon ? {} : (body.as as Record<string, unknown>),
       role: isAnon ? anonRole : apiRole,
-    });
-    return c.json(result);
+    };
+    const args = { schema: SCHEMA, table, ...id };
+
+    switch (body.action ?? "read") {
+      case "create":
+        return c.json(await insertAs(config.db, { ...args, values: body.values }));
+      case "update":
+        return c.json(
+          await updateAs(config.db, { ...args, values: body.values, match: body.match }),
+        );
+      case "delete":
+        return c.json(await deleteAs(config.db, { ...args, match: body.match }));
+      default:
+        return c.json(await selectAs(config.db, args));
+    }
   });
 
   // ---- data plane (apps consume this) ----
 
-  /** Read a table through RLS, gated by a verified JWT. */
-  app.get("/data/:table", async (c) => {
+  /**
+   * Resolve the caller's identity from the Authorization header: a verified JWT
+   * yields the api role + its claims; no token falls back to the anon role
+   * (locked by default). Returns a 401 Response if a token is present but invalid.
+   */
+  async function identityFor(c: Context): Promise<Identity | Response> {
     const header = c.req.header("authorization");
     const token = header?.startsWith("Bearer ") ? header.slice(7) : undefined;
-
-    if (!token) {
-      // No token -> anon role. Locked-by-default unless a public_read rule exists.
-      const result = await selectAs(config.db, {
-        schema: SCHEMA,
-        table: c.req.param("table"),
-        claims: {},
-        role: anonRole,
-      });
-      return c.json(result);
-    }
-
-    let claims: AuthzdxClaims;
+    if (!token) return { claims: {}, role: anonRole };
     try {
-      claims = await verifyClaims(token, config.jwks);
+      const claims = await verifyClaims(token, config.jwks);
+      return { claims: claims as unknown as Record<string, unknown>, role: apiRole };
     } catch {
       return c.json({ error: "invalid token" }, 401);
     }
+  }
 
-    const result = await selectAs(config.db, {
+  /** Read a table through RLS, gated by a verified JWT. */
+  app.get("/data/:table", async (c) => {
+    const id = await identityFor(c);
+    if (id instanceof Response) return id;
+    return c.json(
+      await selectAs(config.db, { schema: SCHEMA, table: c.req.param("table"), ...id }),
+    );
+  });
+
+  /** Insert a row through RLS, gated by a verified JWT. */
+  app.post("/data/:table", async (c) => {
+    const id = await identityFor(c);
+    if (id instanceof Response) return id;
+    const body = (await c.req.json()) as { values?: Record<string, unknown> };
+    const result = await insertAs(config.db, {
       schema: SCHEMA,
       table: c.req.param("table"),
-      claims: claims as unknown as Record<string, unknown>,
-      role: apiRole,
+      values: body.values,
+      ...id,
     });
-    return c.json(result);
+    return c.json(result, result.ok ? 200 : 403);
+  });
+
+  /** Update rows matching `match` through RLS, gated by a verified JWT. */
+  app.patch("/data/:table", async (c) => {
+    const id = await identityFor(c);
+    if (id instanceof Response) return id;
+    const body = (await c.req.json()) as {
+      match?: Record<string, unknown>;
+      values?: Record<string, unknown>;
+    };
+    const result = await updateAs(config.db, {
+      schema: SCHEMA,
+      table: c.req.param("table"),
+      match: body.match,
+      values: body.values,
+      ...id,
+    });
+    return c.json(result, result.ok ? 200 : 403);
+  });
+
+  /** Delete rows matching `match` through RLS, gated by a verified JWT. */
+  app.delete("/data/:table", async (c) => {
+    const id = await identityFor(c);
+    if (id instanceof Response) return id;
+    const body = (await c.req.json().catch(() => ({}))) as { match?: Record<string, unknown> };
+    const result = await deleteAs(config.db, {
+      schema: SCHEMA,
+      table: c.req.param("table"),
+      match: body.match,
+      ...id,
+    });
+    return c.json(result, result.ok ? 200 : 403);
   });
 
   return app;
